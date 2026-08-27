@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sherd Proof 陶片拼合证据评议</title>
+  <link rel="stylesheet" href="/assets/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark">SP</span><div><strong>Sherd Proof</strong><small>陶片拼合证据评议</small></div></div>
+    <div id="connection" class="connection">正在连接</div>
+  </header>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="sidebar-head"><h2>拼合案件</h2><button id="new-case-button" class="icon-button" title="新建案件" aria-label="新建案件">＋</button></div>
+      <div id="case-list" class="case-list"></div>
+    </aside>
+    <main class="workspace">
+      <section id="empty-state" class="empty-state">
+        <div class="seal-shape">证</div>
+        <h1>选择案件开始评议</h1>
+        <p>从左侧打开案件，或创建新的陶片拼合论证。</p>
+        <button class="primary" data-action="new-case">新建案件</button>
+      </section>
+
+      <section id="case-workspace" class="hidden">
+        <div class="case-heading">
+          <div><p id="case-id" class="eyebrow"></p><h1 id="case-title"></h1><p id="case-meta" class="muted"></p></div>
+          <div><span id="status-badge" class="status"></span><span id="revision" class="revision"></span></div>
+        </div>
+        <nav class="status-track" aria-label="案件流程">
+          <span data-stage="draft">建档</span><span data-stage="baseline_frozen">基线</span><span data-stage="deliberation">评议</span><span data-stage="pending_review">复核</span><span data-stage="sealed">定稿</span>
+        </nav>
+        <div id="notice" class="notice hidden" role="status"></div>
+
+        <div class="tabs" role="tablist">
+          <button class="tab active" data-tab="baseline">陶片基线</button>
+          <button class="tab" data-tab="evidence">证据矩阵</button>
+          <button class="tab" data-tab="challenges">异议队列</button>
+          <button class="tab" data-tab="review">同行复核</button>
+          <button class="tab" data-tab="dossier">定稿校验</button>
+          <button class="tab" data-tab="timeline">审计时间线</button>
+        </div>
+
+        <section id="tab-baseline" class="tab-panel">
+          <div class="section-head"><div><h2>陶片基线</h2><p>冻结后陶片集合不可增删。</p></div><button id="freeze-button" class="primary">冻结基线</button></div>
+          <div class="table-wrap"><table><thead><tr><th>陶片编号</th><th>出土单位</th><th>胎土</th><th>断面</th><th>尺寸 mm</th><th>图像引用</th></tr></thead><tbody id="sherd-rows"></tbody></table></div>
+          <form id="sherd-form" class="form-band">
+            <h3>登记陶片</h3>
+            <div class="form-grid cols-4">
+              <label>陶片编号<input name="sherd_id" required></label><label>出土单位编码<input name="context_code" required></label>
+              <label>胎土编码<input name="fabric_code" required></label><label>断面描述<input name="rim_profile" required></label>
+              <label>高度 mm<input name="height" type="number" min="0.01" step="0.01" required></label><label>宽度 mm<input name="width" type="number" min="0.01" step="0.01" required></label>
+              <label>厚度 mm<input name="depth" type="number" min="0.01" step="0.01" required></label><label>图像引用<input name="image_ref" placeholder="archive://..." required></label>
+              <label class="span-4">图像 SHA-256<input name="image_digest" minlength="64" maxlength="64" required></label>
+            </div><div class="form-actions"><button class="primary" type="submit">登记陶片</button></div>
+          </form>
+        </section>
+
+        <section id="tab-evidence" class="tab-panel hidden">
+          <div class="section-head"><div><h2>候选拼合证据矩阵</h2><p>五类证据均完整后方可公开评议。</p></div></div>
+          <div id="hypothesis-list" class="matrix-list"></div>
+          <form id="returned-evidence-form" class="form-band hidden">
+            <h3>修订复核退回证据</h3><div class="form-grid cols-2">
+              <label>候选<select name="hypothesis_id" required></select></label><label>开放证据项<select name="evidence_key" required></select></label>
+              <label>候选作者<input name="actor_id" required></label><label>修订说明<input name="note" required></label>
+              <label class="span-2">替换内容<textarea name="replacement" required></textarea></label>
+            </div><div class="form-actions"><button class="primary" type="submit">保存版本化修订</button></div>
+          </form>
+          <form id="hypothesis-form" class="form-band">
+            <h3>登记候选拼合</h3>
+            <div class="form-grid cols-2">
+              <label>候选编号<input name="hypothesis_id" required></label><label>作者身份<input name="actor_id" required></label>
+              <label class="span-2">陶片编号（逗号分隔）<input name="sherd_ids" required></label>
+              <label>边缘对应<textarea name="edge_match" required></textarea></label><label>胎土特征<textarea name="fabric_match" required></textarea></label>
+              <label>纹饰连续性<textarea name="decoration_continuity" required></textarea></label><label>尺度测量（名称:数值）<textarea name="scale_measurements" placeholder="弦长:42.3,间隙:0.8" required></textarea></label>
+              <label class="span-2">证据图像引用（逗号分隔）<input name="image_refs" required></label>
+            </div><div class="form-actions"><button class="primary" type="submit">保存候选</button></div>
+          </form>
+        </section>
+
+        <section id="tab-challenges" class="tab-panel hidden">
+          <div class="section-head"><div><h2>结构化异议</h2><p>异议锁定对应证据项，直至完成版本化处置。</p></div><button id="request-review-button" class="primary">提交待复核</button></div>
+          <div id="challenge-list" class="queue"></div>
+          <form id="challenge-form" class="form-band">
+            <h3>提出异议</h3><div class="form-grid cols-2">
+              <label>关联候选<select name="hypothesis_id" required></select></label><label>证据项<select name="evidence_key" required><option value="edge_match">边缘对应</option><option value="fabric_match">胎土特征</option><option value="decoration_continuity">纹饰连续性</option><option value="scale_measurements">尺度测量</option><option value="image_refs">图像引用</option></select></label>
+              <label>提出人<input name="actor_id" required></label><label>异议编号<input name="challenge_id" required></label>
+              <label class="span-2">异议陈述<textarea name="statement" required></textarea></label>
+            </div><div class="form-actions"><button class="primary" type="submit">登记异议</button></div>
+          </form>
+        </section>
+
+        <section id="tab-review" class="tab-panel hidden">
+          <div class="section-head"><div><h2>独立同行复核</h2><p>复核员不得是负责人或候选编辑者。</p></div></div>
+          <div id="review-history" class="review-history"></div>
+          <form id="review-form" class="form-band">
+            <div class="form-grid cols-2"><label>复核员身份<input name="reviewer_id" required></label><label>复核结论<select name="decision"><option value="approve">通过</option><option value="return">定向退回</option></select></label>
+              <label class="span-2">复核理由<textarea name="reason" required></textarea></label><label class="span-2">退回开放证据项（逗号分隔）<input name="reopen_keys" placeholder="edge_match,scale_measurements"></label></div>
+            <div class="form-actions"><button class="primary" type="submit">提交复核结论</button></div>
+          </form>
+        </section>
+
+        <section id="tab-dossier" class="tab-panel hidden">
+          <div class="section-head"><div><h2>只读重建档案</h2><p>规范化载荷、事件链头和 SHA-256 共同验证完整性。</p></div><button id="verify-button" class="secondary">重新验证</button></div>
+          <div id="dossier-empty" class="inline-empty">复核通过后可生成定稿档案。</div>
+          <div id="dossier-view" class="dossier hidden"><div id="verify-result" class="verify-result"></div><dl><dt>档案编号</dt><dd id="dossier-id"></dd><dt>批准候选</dt><dd id="approved-hypotheses"></dd><dt>复核员</dt><dd id="dossier-reviewer"></dd><dt>事件链头</dt><dd id="chain-head" class="digest"></dd><dt>档案 SHA-256</dt><dd id="dossier-sha" class="digest"></dd></dl><details><summary>查看规范化载荷</summary><pre id="canonical-payload"></pre></details></div>
+          <form id="finalize-form" class="form-band"><h3>生成定稿档案</h3><div class="form-grid cols-2"><label>执行人<input name="actor_id" required></label><label>档案编号<input name="dossier_id" required></label></div><div class="form-actions"><button class="primary" type="submit">原子冻结并生成档案</button></div></form>
+        </section>
+
+        <section id="tab-timeline" class="tab-panel hidden"><div class="section-head"><div><h2>审计摘要链</h2><p>所有业务修订按发生顺序只追加记录。</p></div></div><ol id="timeline-list" class="timeline"></ol></section>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="case-dialog"><form id="case-form" method="dialog"><div class="dialog-head"><h2>创建拼合案件</h2><button value="cancel" class="icon-button" aria-label="关闭">×</button></div><div class="form-grid"><label>案件编号<input name="case_id" required></label><label>遗址单元<input name="site_unit" required></label><label>器物类别<input name="vessel_class" required></label><label>负责人身份<input name="owner_id" required></label></div><div class="dialog-actions"><button value="cancel" class="secondary">取消</button><button id="create-case-submit" value="default" class="primary">创建案件</button></div></form></dialog>
+  <script src="/assets/app.js" defer></script>
+</body>
+</html>
